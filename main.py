@@ -1,7 +1,10 @@
+import os
+import threading
 from pathlib import Path
 
 from dotenv import load_dotenv
 from pygments.lexers import guess_lexer_for_filename
+from flask import Flask
 
 from ai_analyzer import analyze_code
 from attachment_extractor import extract_attachments
@@ -128,7 +131,7 @@ def process_fallback_file():
     return analyze_file(FALLBACK_FILE)
 
 
-def main():
+def run():
     print("🚀 CodeMailer AI started successfully!")
 
     service = gmail_authenticate()
@@ -187,5 +190,25 @@ def main():
             print("❌ No readable code files were found in unread emails or the fallback test file.")
 
 
+app = Flask(__name__)
+
+# ✅ Safe route
+@app.route("/")
+def home():
+    return "CodeMailer AI is running 🚀"
+
+# ✅ Trigger the full pipeline
+@app.route("/run")
+def run_pipeline():
+    try:
+        run()
+        return "CodeMailer AI pipeline executed successfully ✅"
+    except Exception as e:
+        return f"Error: {str(e)}", 500
+
+
 if __name__ == "__main__":
-    main()
+    # Auto-run the pipeline in a background thread when the server starts
+    t = threading.Thread(target=run, daemon=True)
+    t.start()
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)), debug=True, use_reloader=False)
