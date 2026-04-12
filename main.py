@@ -25,7 +25,8 @@ def get_unread_messages(service):
     results = service.users().messages().list(
         userId="me",
         labelIds=["INBOX"],
-        q="is:unread"
+        q="is:unread",
+        maxResults=1
     ).execute()
     return results.get("messages", [])
 
@@ -48,6 +49,25 @@ def looks_like_code(file_path, code):
         return False
 
 
+def get_language_name(file_path, code):
+    mapping = {
+        ".py": "Python", ".js": "JavaScript", ".ts": "TypeScript", 
+        ".java": "Java", ".cpp": "C++", ".c": "C", ".cs": "C#", 
+        ".go": "Go", ".rb": "Ruby", ".php": "PHP", ".rs": "Rust", 
+        ".swift": "Swift", ".kt": "Kotlin", ".scala": "Scala", 
+        ".html": "HTML", ".css": "CSS", ".json": "JSON", 
+        ".xml": "XML", ".yaml": "YAML", ".yml": "YAML", 
+        ".sql": "SQL", ".sh": "Shell Script"
+    }
+    ext = file_path.suffix.lower()
+    if ext in mapping:
+        return mapping[ext]
+    try:
+        lexer = guess_lexer_for_filename(file_path.name, code)
+        return lexer.name
+    except Exception:
+        return "Unknown"
+
 def analyze_file(file_path):
     code = read_text_file(file_path)
     if not code:
@@ -58,10 +78,10 @@ def analyze_file(file_path):
 
     print(f"🤖 Analyzing {file_path.name}...")
 
-    try:
-        lexer = guess_lexer_for_filename(file_path.name, code)
-        language_line = f"Detected language: {lexer.name}\n\n"
-    except Exception:
+    lang_name = get_language_name(file_path, code)
+    if lang_name != "Unknown":
+        language_line = f"Detected language: {lang_name}\n\n"
+    else:
         language_line = ""
 
     analysis = analyze_code(code)
@@ -71,9 +91,9 @@ def analyze_file(file_path):
 def process_email(service, message_ref):
     message = get_email_content(service, message_ref["id"])
     headers = message.get("payload", {}).get("headers", [])
-    header_map = {header["name"]: header["value"] for header in headers}
+    header_map = {header["name"].lower(): header["value"] for header in headers}
 
-    print(f"📧 Processing email: {header_map.get('Subject', '(No Subject)')}")
+    print(f"📧 Processing email: {header_map.get('subject', '(No Subject)')}")
 
     downloaded_files = extract_attachments(service, message)
     analyses = []
@@ -92,12 +112,12 @@ def process_email(service, message_ref):
 
     email_summary = [
         f"### Email Details",
-        f"**Subject:** {header_map.get('Subject', '(No Subject)')}",
-        f"**From:** {header_map.get('From', 'Unknown Sender')}",
+        f"**Subject:** {header_map.get('subject', '(No Subject)')}",
+        f"**From:** {header_map.get('from', 'Unknown Sender')}",
         f"**Message ID:** {message.get('id', 'N/A')}",
         "---",
     ]
-    return "\n".join(email_summary) + "\n\n".join(analyses), header_map.get('From')
+    return "\n".join(email_summary) + "\n\n".join(analyses), header_map.get('from')
 
 
 def process_fallback_file():
@@ -116,37 +136,55 @@ def main():
 
     print(f"📥 Unread emails found: {len(unread_messages)}")
 
-    final_report = None
-    sender_email = None
+    processed_any = False
 
     for message_ref in unread_messages:
         result = process_email(service, message_ref)
+        
+        # Mark as read to avoid processing the same email infinitely
+        try:
+            service.users().messages().modify(
+                userId="me",
+                id=message_ref["id"],
+                body={"removeLabelIds": ["UNREAD"]}
+            ).execute()
+        except Exception as e:
+            pass
+            
         if result:
             final_report, sender_email = result
-            break
+            html_report = generate_report(final_report)
 
-    if not final_report:
+            print("\n" + "=" * 50)
+            print("AI ANALYSIS RESULT:")
+            print("=" * 50)
+            print(final_report)
+            print("=" * 50)
+            print("Report generated: report.html")
+            print("=" * 50)
+
+            if sender_email:
+                import re
+                match = re.search(r'<([^>]+)>', sender_email)
+                to_email = match.group(1) if match else sender_email
+                send_reply(service, to_email, html_report)
+            
+            processed_any = True
+
+    if not processed_any:
         final_report = process_fallback_file()
+        if final_report:
+            html_report = generate_report(final_report)
 
-    if not final_report:
-        print("❌ No readable code files were found in unread emails or the fallback test file.")
-        return
-
-    html_report = generate_report(final_report)
-
-    print("\n" + "=" * 50)
-    print("AI ANALYSIS RESULT:")
-    print("=" * 50)
-    print(final_report)
-    print("=" * 50)
-    print("Report generated: report.html")
-    print("=" * 50)
-
-    if sender_email:
-        import re
-        match = re.search(r'<([^>]+)>', sender_email)
-        to_email = match.group(1) if match else sender_email
-        send_reply(service, to_email, html_report)
+            print("\n" + "=" * 50)
+            print("AI ANALYSIS RESULT:")
+            print("=" * 50)
+            print(final_report)
+            print("=" * 50)
+            print("Report generated: report.html")
+            print("=" * 50)
+        else:
+            print("❌ No readable code files were found in unread emails or the fallback test file.")
 
 
 if __name__ == "__main__":
