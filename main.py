@@ -193,12 +193,12 @@ def run():
 app = Flask(__name__)
 
 # ✅ Safe route
-@app.route("/")
+@app.route("/", methods=["GET", "POST"])
 def home():
     return "CodeMailer AI is running 🚀"
 
 # ✅ Trigger the full pipeline
-@app.route("/run")
+@app.route("/run", methods=["GET", "POST"])
 def run_pipeline():
     try:
         run()
