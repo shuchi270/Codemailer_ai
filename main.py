@@ -4,7 +4,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from pygments.lexers import guess_lexer_for_filename
-from flask import Flask
+from flask import Flask, jsonify
 
 from ai_analyzer import analyze_code
 from attachment_extractor import extract_attachments
@@ -192,23 +192,35 @@ def run():
 
 app = Flask(__name__)
 
-# ✅ Safe route
-@app.route("/", methods=["GET", "POST"])
+# ✅ Health / base route
+@app.route("/", methods=["GET"])
 def home():
     return "CodeMailer AI is running 🚀"
 
-# ✅ Trigger the full pipeline
+# ✅ Run pipeline in background thread
 @app.route("/run", methods=["GET", "POST"])
 def run_pipeline():
     try:
-        run()
-        return "CodeMailer AI pipeline executed successfully ✅"
+        thread = threading.Thread(target=run)
+        thread.start()
+        return jsonify({
+            "status": "started",
+            "message": "CodeMailer AI pipeline is running in background 🚀"
+        })
     except Exception as e:
-        return f"Error: {str(e)}", 500
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
 
+# ✅ Optional: health check endpoint (good for Cloud Run)
+@app.route("/health", methods=["GET"])
+def health():
+    return "OK", 200
 
 if __name__ == "__main__":
-    # Auto-run the pipeline in a background thread when the server starts
-    t = threading.Thread(target=run, daemon=True)
-    t.start()
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)), debug=True, use_reloader=False)
+    app.run(
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", 8080)),
+        debug=True
+    )
