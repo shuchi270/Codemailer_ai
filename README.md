@@ -1,71 +1,66 @@
-# CodeMailer AI
+# 🚀 CodeMailer AI
 
-CodeMailer AI is a Python project that combines Gmail access, AI-based code analysis, and HTML report generation. The current codebase can authenticate with Gmail, read unread messages, analyze a code file with an AI model through OpenRouter, and render the analysis into a simple report page.
+CodeMailer AI is an end-to-end Python automation tool that turns your Gmail inbox into a seamless, AI-powered Code Reviewer. It automatically detects unread emails containing code files, analyzes them using advanced AI models via OpenRouter (such as Gemini 2.0 Flash), generates a beautifully formatted, syntax-highlighted HTML report, and replies directly to the original sender.
 
-## Project Overview
+## ✨ Features
 
-The idea behind this project is to build an assistant that can:
+- **Automated Gmail Integration**: Uses OAuth 2.0 to securely access your inbox, fetch unread messages, and extract Python (`.py`) attachments.
+- **Deep AI Code Analysis**: Uses cutting-edge AI models to provide deeply structured code reviews. By default, it returns:
+  1. Language identification
+  2. The original code formatted with inline explanatory comments added
+  3. Detailed bug detection (logic errors, syntax issues, etc.)
+  4. A succinct overall summary
+  5. A step-by-step workflow of how the code executes
+- **Stunning HTML Reports**: Markdown analysis is dynamically parsed and combined with Pygments syntax highlighting. The report is delivered in a premium, modern dark-mode HTML template with clear, high-contrast, pure-black snippet rendering and single-tone elegant comment typography.
+- **Auto-Reply Workflow**: Automatically sends the generated rich-text HTML report back to the original sender's email address.
+- **Local Fallback Mode**: If no relevant emails are found in your inbox, it organically falls back to scanning and analyzing local test files.
 
-- connect to Gmail
-- read incoming emails
-- extract code content
-- analyze that code with AI
-- generate a readable report for the user
+## 🛠️ Project Structure
 
-Right now, the project has the building blocks for that workflow, but the full end-to-end email-to-report automation is not finished yet.
+- `main.py` - The main entry point that drives the automation pipeline.
+- `gmail_auth.py` - Handles secure OAuth 2.0 authentication with Gmail.
+- `gmail_reader.py` - Fetches unread emails and safely reads metadata.
+- `attachment_extractor.py` - Downloads and extracts attached code files dynamically.
+- `ai_analyzer.py` - Manages the OpenRouter API interaction and structures the code review prompt.
+- `report_generator.py` - Translates Markdown to structured HTML and parses code blocks via Pygments.
+- `templates/report.html` - The stylish, responsive Jinja2 HTML template.
+- `gmail_sender.py` - Composes the final HTML payload and automatically sends the finalized Code Review directly to the user.
+- `.env` - Environment variables (contains your `OPENROUTER_API_KEY`).
 
-## Current Completion Status
+## 🚀 Getting Started
 
-The project is roughly **60-70% complete**.
+### 1. Requirements
 
-What is already implemented:
+Install all necessary dependencies:
+```bash
+pip install -r requirements.txt
+```
 
-- Gmail OAuth authentication in `gmail_auth.py`
-- unread email listing and message fetch helpers in `gmail_reader.py`
-- AI code analysis using OpenRouter in `ai_analyzer.py`
-- basic HTML report generation with Jinja2 in `report_generator.py`
-- a runnable entry point in `main.py`
+### 2. Configuration
 
-What is still incomplete or basic:
+Make sure your Google OAuth credentials (`credentials.json`) are present in the project's root folder.
 
-- `main.py` currently analyzes a local test file instead of processing Gmail message content
-- email parsing and code extraction are not yet connected to the main workflow
-- the generated HTML report is functional but very simple
-- there are no formal automated tests yet
-- configuration and secret handling still need cleanup before public sharing
+Create a `.env` file containing your OpenRouter API Key:
+```env
+OPENROUTER_API_KEY=sk-or-v1-...
+```
 
-## Current Workflow
+### 3. Usage
 
-At the moment, the app works more like a prototype than a finished product:
+Run the main application:
+```bash
+python3 main.py
+```
 
-1. Load environment variables from `.env`
-2. Read a local Python file
-3. Send the code to OpenRouter for analysis
-4. Save the AI response into `report.html`
+1. You will be prompted to authenticate with your Google Account in the browser (if not already authenticated).
+2. The script will automatically scan your `INBOX` for unread emails.
+3. If attachments are found, they will be downloaded, parsed, styled, and evaluated.
+4. The parsed HTML analysis payload is securely generated locally (`report.html`) and emailed securely back to the sender.
 
-The Gmail modules are present, but they are not fully wired into this flow yet.
+## 🤝 Contributing
 
-## Project Structure
+Contributions are welcome! Please ensure any robust structural enhancements or feature additions are well-documented.
 
-- `main.py` - runs the current local-file analysis flow
-- `gmail_auth.py` - handles Gmail OAuth login
-- `gmail_reader.py` - fetches unread emails and email content
-- `ai_analyzer.py` - sends code to the AI model and returns the analysis
-- `report_generator.py` - renders the HTML report
-- `templates/report.html` - Jinja2 template for the report
-- `test.py` - sample code file used for analysis
+---
 
-## Next Steps
-
-To complete the project, the next useful steps are:
-
-- connect Gmail message content to the analyzer
-- extract code snippets from email bodies or attachments
-- improve report formatting and readability
-- add error handling and logging
-- add automated tests
-- clean up secrets and ignored files before publishing
-
-## Summary
-
-CodeMailer AI already demonstrates the core idea and has the major modules in place. The project is best described as a **working prototype** with the analysis engine and report generation completed, while the full Gmail-to-analysis automation is still under development.
+*CodeMailer AI is entirely operational and optimized!*
