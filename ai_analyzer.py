@@ -51,7 +51,7 @@ def analyze_code(code):
         "model": "google/gemini-2.0-flash-001",
         "messages": [
             {"role": "system", "content": "You are a professional Senior Software Engineer and Code Auditor."},
-            {"role": "user", "content": f"Analyze this code:\n\n{code}"}
+            {"role": "user", "content": prompt}
         ],
         "temperature": 0.3
     }

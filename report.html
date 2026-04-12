@@ -1,122 +1,237 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<title>Code Analysis</title>
+    <meta charset="UTF-8">
+    <title>Code Analysis Report from CodeMailer AI</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --text-color: #e2e8f0;
+            --accent-color: #38bdf8;
+            --card-bg: #1e293b;
+            --border-color: #334155;
+            --code-bg: #000000;
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+        }
+        h1, h2, h3, h4 {
+            color: var(--accent-color);
+            margin-top: 2em;
+            margin-bottom: 0.5em;
+        }
+        h1 {
+            margin-top: 0;
+            font-size: 2.2em;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+            text-align: center;
+        }
+        p { margin-bottom: 1.2em; }
+        ul, ol { margin-bottom: 1.2em; padding-left: 20px; }
+        li { margin-bottom: 0.5em; }
+        code {
+            font-family: 'Fira Code', 'Menlo', 'Monaco', 'Courier New', monospace;
+            background-color: var(--code-bg);
+            padding: 0.2em 0.4em;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #fca5a5;
+        }
+        pre {
+            background-color: var(--code-bg);
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            margin: 1.5em 0;
+            line-height: 1.5;
+        }
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            color: inherit;
+        }
+        
+        /* Syntax Highlighting */
+        .codehilite { background: var(--code-bg); color: #f8f8f2; }
+        .codehilite .c, .codehilite .c1, .codehilite .cm, .codehilite .cs { color: #e2e8f0; font-style: italic; } /* Bright single-tone light comments */
+        .codehilite .err { color: #f92672; } 
+        .codehilite .k, .codehilite .kc, .codehilite .kd, .codehilite .kn, .codehilite .kp, .codehilite .kr, .codehilite .kt { color: #66d9ef; font-weight: bold; } 
+        .codehilite .l, .codehilite .ld, .codehilite .m, .codehilite .mb, .codehilite .mf, .codehilite .mh, .codehilite .mi, .codehilite .il, .codehilite .mo { color: #ae81ff } 
+        .codehilite .s, .codehilite .s1, .codehilite .s2, .codehilite .sa, .codehilite .sb, .codehilite .sc, .codehilite .dl, .codehilite .sd, .codehilite .se, .codehilite .sh, .codehilite .si, .codehilite .sx, .codehilite .sr, .codehilite .ss { color: #e6db74 } 
+        .codehilite .na, .codehilite .nc, .codehilite .nd, .codehilite .ne, .codehilite .nf, .codehilite .nx { color: #a6e22e } 
+        .codehilite .o, .codehilite .ow { color: #f92672 } 
+        .codehilite .p { color: #f8f8f2 } 
+        .codehilite .nt { color: #f92672 } 
+        .codehilite .nv, .codehilite .vc, .codehilite .vg, .codehilite .vi { color: #f8f8f2 } 
+        .codehilite .ge { font-style: italic }
+        .codehilite .gs { font-weight: bold }
+        hr {
+            border: 0;
+            border-top: 1px solid var(--border-color);
+            margin: 2em 0;
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 0.9em;
+            color: #94a3b8;
+        }
+    </style>
 </head>
-
 <body>
+    <div class="container">
+        <h1>Code Analysis Report</h1>
+        <div class="content">
+            <h3>Email Details</h3>
+<p><strong>Subject:</strong> Final test Phase
+<strong>From:</strong> Shuchi <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#104;&#99;&#115;&#115;&#104;&#117;&#99;&#104;&#105;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;">&#104;&#99;&#115;&#115;&#104;&#117;&#99;&#104;&#105;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;</a>
+<strong>Message ID:</strong> 19d81f228c72597a
+---# File: data_ingestion.py</p>
+<p>Detected language: Python</p>
+<ol>
+<li>
+<p><strong>Language Identification</strong>: Python</p>
+</li>
+<li>
+<p><strong>Added Comments</strong>:</p>
+</li>
+</ol>
+<div class="codehilite"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.exception</span><span class="w"> </span><span class="kn">import</span> <span class="n">CustomException</span>  <span class="c1"># Importing custom exception handling</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span>  <span class="c1"># Importing logging module</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>  <span class="c1"># Importing pandas for data manipulation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.model_selection</span><span class="w"> </span><span class="kn">import</span> <span class="n">train_test_split</span>  <span class="c1"># Importing train_test_split for data splitting</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>  <span class="c1"># Importing dataclass for defining data classes</span>
 
-<h1>Code Analysis Report</h1>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.components.data_transformation</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataTransformation</span>  <span class="c1"># Importing DataTransformation class</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.components.data_transformation</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataTransformationConfig</span>  <span class="c1"># Importing DataTransformationConfig class</span>
 
-<h2>Result</h2>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.components.model_trainer</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModelTrainerConfig</span>  <span class="c1"># Importing ModelTrainerConfig class</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.components.model_trainer</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModelTrainer</span>  <span class="c1"># Importing ModelTrainer class</span>
 
-<pre>Okay, I've analyzed the Python code snippet:
 
-```python
-def add(a, b):
-    return a + b
-```
+<span class="nd">@dataclass</span>  <span class="c1"># Using dataclass to define a data class for data ingestion configuration</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DataIngestionConfig</span><span class="p">:</span>
+    <span class="n">train_data_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;artifacts&#39;</span><span class="p">,</span> <span class="s1">&#39;train.csv&#39;</span><span class="p">)</span>  <span class="c1"># Path for training data</span>
+    <span class="n">test_data_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;artifacts&#39;</span><span class="p">,</span> <span class="s1">&#39;test.csv&#39;</span><span class="p">)</span>  <span class="c1"># Path for testing data</span>
+    <span class="n">raw_data_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;artifacts&#39;</span><span class="p">,</span> <span class="s1">&#39;data.csv&#39;</span><span class="p">)</span>  <span class="c1"># Path for raw data</span>
 
-Here's my assessment:
 
-**Functionality:**
+<span class="k">class</span><span class="w"> </span><span class="nc">DataIngestion</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ingestion_config</span> <span class="o">=</span> <span class="n">DataIngestionConfig</span><span class="p">()</span>  <span class="c1"># Initializing the data ingestion configuration</span>
 
-*   The function `add(a, b)` takes two arguments, `a` and `b`, and returns their sum.  It performs basic addition.
+    <span class="k">def</span><span class="w"> </span><span class="nf">initiate_data_ingestion</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Entered the data ingestion method or components.&#39;</span><span class="p">)</span>  <span class="c1"># Logging the start of data ingestion</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;/Users/shuchi/Desktop/MLProjects/end2end_project/notebook/data/stud.csv&#39;</span><span class="p">)</span>  <span class="c1"># Reading the data from a CSV file</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Read the dataset as dataframe&#39;</span><span class="p">)</span>  <span class="c1"># Logging that the data has been read</span>
 
-**Strengths:**
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ingestion_config</span><span class="o">.</span><span class="n">train_data_path</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># Creating the directory for the training data if it doesn&#39;t exist</span>
 
-*   **Simplicity:** The code is extremely straightforward and easy to understand.  It directly implements the intended functionality.
-*   **Readability:**  The function name `add` clearly indicates its purpose. The variable names `a` and `b` are acceptable in this context, as they represent generic addends.
-*   **Correctness:**  For basic numerical addition, the code is correct.
-*   **Conciseness:** The function is as short and to-the-point as it can be.
+            <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ingestion_config</span><span class="o">.</span><span class="n">raw_data_path</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># Saving the raw data to a CSV file</span>
 
-**Potential Issues and Considerations:**
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Train test split initiated&#39;</span><span class="p">)</span>  <span class="c1"># Logging the start of the train-test split</span>
+            <span class="n">train_set</span><span class="p">,</span> <span class="n">test_set</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>  <span class="c1"># Splitting the data into training and testing sets</span>
 
-*   **Type Handling:** The code doesn't explicitly enforce or check the types of `a` and `b`.  This means it could potentially work with numbers (integers, floats), strings (performing concatenation), or other objects that support the `+` operator.  Whether this is desirable depends on the intended use case.
-*   **Error Handling:**  The code lacks error handling. If `a` and `b` are of incompatible types that don't support addition with the `+` operator, a `TypeError` will be raised.
-*   **Generality:** While simple, it might be *too* simple.  If the requirements evolve to include handling more than two numbers, or performing different types of addition (e.g., matrix addition), the function would need to be modified or replaced.
-*   **No Documentation:** There is no docstring explaining what the function does, what types of arguments it expects, and what it returns.  This is generally considered bad practice, especially for functions that might be used by others.
+            <span class="n">train_set</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ingestion_config</span><span class="o">.</span><span class="n">train_data_path</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># Saving the training data to a CSV file</span>
 
-**Recommendations:**
+            <span class="n">test_set</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ingestion_config</span><span class="o">.</span><span class="n">test_data_path</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># Saving the testing data to a CSV file</span>
 
-1.  **Add a Docstring:**  Include a docstring to explain the function's purpose, arguments, and return value.  This is crucial for maintainability and usability.
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Ingestion of data is completed.&#39;</span><span class="p">)</span>  <span class="c1"># Logging the completion of data ingestion</span>
 
-    ```python
-    def add(a, b):
-        """
-        Adds two numbers together.
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ingestion_config</span><span class="o">.</span><span class="n">train_data_path</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ingestion_config</span><span class="o">.</span><span class="n">test_data_path</span>
+            <span class="p">)</span>  <span class="c1"># Returning the paths to the training and testing data</span>
 
-        Args:
-            a: The first number.
-            b: The second number.
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">CustomException</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">sys</span><span class="p">)</span>  <span class="c1"># Raising a custom exception if an error occurs</span>
 
-        Returns:
-            The sum of a and b.
-        """
-        return a + b
-    ```
 
-2.  **Consider Type Hints (Python 3.5+):**  Use type hints to improve code clarity and enable static analysis.
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">obj</span> <span class="o">=</span> <span class="n">DataIngestion</span><span class="p">()</span>  <span class="c1"># Creating an instance of the DataIngestion class</span>
+    <span class="n">train_data</span><span class="p">,</span> <span class="n">test_data</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">initiate_data_ingestion</span><span class="p">()</span>  <span class="c1"># Initiating the data ingestion process</span>
 
-    ```python
-    def add(a: float, b: float) -> float:
-        """
-        Adds two numbers together.
+    <span class="n">data_transformation</span> <span class="o">=</span> <span class="n">DataTransformation</span><span class="p">()</span>  <span class="c1"># Creating an instance of the DataTransformation class</span>
+    <span class="n">train_arr</span><span class="p">,</span> <span class="n">test_arr</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">data_transformation</span><span class="o">.</span><span class="n">initiate_data_transformation</span><span class="p">(</span><span class="n">train_data</span><span class="p">,</span> <span class="n">test_data</span><span class="p">)</span>  <span class="c1"># Initiating the data transformation process</span>
 
-        Args:
-            a: The first number.
-            b: The second number.
+    <span class="n">modeltrainer</span> <span class="o">=</span> <span class="n">ModelTrainer</span><span class="p">()</span>  <span class="c1"># Creating an instance of the ModelTrainer class</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">modeltrainer</span><span class="o">.</span><span class="n">initiate_model_trainer</span><span class="p">(</span><span class="n">train_arr</span><span class="p">,</span> <span class="n">test_arr</span><span class="p">))</span>  <span class="c1"># Initiating the model training process and printing the result</span>
+</code></pre></div>
 
-        Returns:
-            The sum of a and b.
-        """
-        return a + b
-    ```
-    Or, for more general numerical types:
-     ```python
-    from typing import Union
-
-    Number = Union[int, float]
-
-    def add(a: Number, b: Number) -> Number:
-        """
-        Adds two numbers together.
-
-        Args:
-            a: The first number.
-            b: The second number.
-
-        Returns:
-            The sum of a and b.
-        """
-        return a + b
-    ```
-
-3.  **Error Handling (If Necessary):** If you need to ensure that the function only works with numbers, you can add a type check and raise an exception if the inputs are invalid.  However, in many cases, it's acceptable to let the `TypeError` propagate, as it clearly indicates a problem with the input.
-
-    ```python
-    def add(a, b):
-        """
-        Adds two numbers together.
-
-        Args:
-            a: The first number.
-            b: The second number.
-
-        Returns:
-            The sum of a and b.
-
-        Raises:
-            TypeError: If a or b is not a number (int or float).
-        """
-        if not isinstance(a, (int, float)) or not isinstance(b, (int, float)):
-            raise TypeError("Inputs must be numbers (int or float)")
-        return a + b
-    ```
-
-**Summary:**
-
-The code is a simple and correct implementation of addition.  The main improvements would be to add a docstring and consider type hints for better documentation and code clarity.  Error handling should be added only if there's a specific requirement to validate the input types.  The need for type hints and error handling depends heavily on the context in which this function will be used. If it's a small, internal function where the input types are well-controlled, they might be unnecessary.  However, for a public API or a function used in a larger project, they are highly recommended.
-</pre>
-
+<ol>
+<li>
+<p><strong>Bug Detection</strong>:</p>
+</li>
+<li>
+<p><strong>Hardcoded File Path</strong>: The path <code>'/Users/shuchi/Desktop/MLProjects/end2end_project/notebook/data/stud.csv'</code> is hardcoded. This makes the code non-portable and dependent on a specific user's file system. This should be made configurable, possibly through environment variables or a configuration file.</p>
+</li>
+<li><strong>Missing Error Handling for File Operations</strong>: While there's a general <code>try...except</code> block, there isn't specific error handling for file read/write operations.  If the CSV file is corrupted or inaccessible, a more specific exception might be useful.</li>
+<li><strong>Ignoring the Third Return Value</strong>: The <code>data_transformation.initiate_data_transformation</code> function returns three values, but the code only unpacks the first two and ignores the third using <code>_</code>.  While this isn't necessarily a bug, it suggests that the third value might be important and should be handled or at least its purpose understood.</li>
+<li>
+<p><strong>Lack of Input Validation</strong>: The code doesn't validate the data read from the CSV file. It assumes the data is in the correct format and within expected ranges.  Adding validation steps can prevent unexpected errors later in the pipeline.</p>
+</li>
+<li>
+<p><strong>Summary</strong>:</p>
+</li>
+</ol>
+<p>This code defines a data ingestion pipeline for a machine learning project. It reads data from a CSV file, splits it into training and testing sets, and saves the resulting datasets to separate CSV files. It then initiates data transformation and model training using other modules. The code uses custom exception handling and logging for better error management and monitoring.</p>
+<ol>
+<li>
+<p><strong>Workflow</strong>:</p>
+</li>
+<li>
+<p><strong>Initialization</strong>: The script starts by importing necessary libraries and modules, including custom modules for exception handling, logging, data transformation, and model training.</p>
+</li>
+<li><strong>Configuration</strong>: It defines a <code>DataIngestionConfig</code> class using <code>@dataclass</code> to manage file paths for raw, training, and testing data.</li>
+<li><strong>Data Ingestion</strong>: The <code>DataIngestion</code> class is responsible for reading the data, splitting it into training and testing sets, and saving the sets to CSV files.<ul>
+<li>It initializes with a <code>DataIngestionConfig</code> instance.</li>
+<li>The <code>initiate_data_ingestion</code> method:<ul>
+<li>Logs the start of the data ingestion process.</li>
+<li>Reads data from a hardcoded CSV file path using <code>pandas</code>.</li>
+<li>Creates the directory for the training data if it doesn't exist.</li>
+<li>Saves the raw data to a CSV file.</li>
+<li>Splits the data into training and testing sets using <code>train_test_split</code>.</li>
+<li>Saves the training and testing sets to separate CSV files.</li>
+<li>Logs the completion of data ingestion.</li>
+<li>Returns the paths to the training and testing data files.</li>
+<li>Handles exceptions using a custom <code>CustomException</code> class.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Main Execution Block</strong>:<ul>
+<li>Creates an instance of the <code>DataIngestion</code> class.</li>
+<li>Calls the <code>initiate_data_ingestion</code> method to perform the data ingestion process, storing the returned train and test data paths.</li>
+<li>Creates an instance of the <code>DataTransformation</code> class.</li>
+<li>Calls the <code>initiate_data_transformation</code> method to transform the training and testing data. The third return value is ignored.</li>
+<li>Creates an instance of the <code>ModelTrainer</code> class.</li>
+<li>Calls the <code>initiate_model_trainer</code> method to train the model and prints the result.</li>
+</ul>
+</li>
+</ol>
+        </div>
+        <div class="footer">
+            <p>Generated by <strong>CodeMailer AI</strong> 🚀</p>
+        </div>
+    </div>
 </body>
 </html>
