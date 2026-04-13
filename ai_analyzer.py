@@ -26,10 +26,20 @@ Analyze the following code snippet.
 Provide the response in this exact format:
 
 1. **Language Identification**: Identify the programming language.
-2. **Added Comments**: Provide a version of the code with helpful inline comments.
-3. **Bug Detection**: List any logic errors, syntax issues, or security risks.
-4. **Summary**: A brief overview of what this code does.
-5. **Workflow**: Explain the step-by-step logic of the execution.
+2. **Problem Statement Alignment**:
+   - What problem is this code trying to solve?
+   - Does the implementation fully and correctly address that problem?
+   - Are there any gaps between the intended goal and the actual behavior?
+3. **Added Comments**: Provide a version of the code with helpful inline comments.
+4. **Bug Detection**: List any logic errors, syntax issues, or security risks.
+5. **Summary**: A brief overview of what this code does.
+6. **Workflow**: Explain the step-by-step logic of the execution.
+7. **Testing Parameters**:
+   - List all input parameters and their expected types/ranges.
+   - Identify critical edge cases (e.g., empty inputs, boundary values, null/None, negative numbers).
+   - Suggest at least 3 concrete unit test cases with expected inputs and outputs.
+   - Highlight any untested or hard-to-test paths in the code.
+8. **Performance & Scalability**: Note any potential bottlenecks or improvements for large inputs.
 
 CODE:
 {code}
