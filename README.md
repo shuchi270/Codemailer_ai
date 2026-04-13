@@ -1,66 +1,96 @@
 # 🚀 CodeMailer AI
 
-CodeMailer AI is an end-to-end Python automation tool that turns your Gmail inbox into a seamless, AI-powered Code Reviewer. It automatically detects unread emails containing code files, analyzes them using advanced AI models via OpenRouter (such as Gemini 2.0 Flash), generates a beautifully formatted, syntax-highlighted HTML report, and replies directly to the original sender.
+CodeMailer AI is an end-to-end Python automation tool that turns your Gmail inbox into a seamless, AI-powered **Code Reviewer**. It automatically detects unread emails containing code files, analyzes them using advanced AI models via OpenRouter (such as Gemini 2.0 Flash), generates a beautifully formatted, syntax-highlighted HTML report, and replies directly to the original sender.
 
 ## ✨ Features
 
-- **Automated Gmail Integration**: Uses OAuth 2.0 to securely access your inbox, fetch unread messages, and extract Python (`.py`) attachments.
-- **Deep AI Code Analysis**: Uses cutting-edge AI models to provide deeply structured code reviews. By default, it returns:
+- **Automated Gmail Integration**: Uses OAuth 2.0 with **token caching** to securely access your inbox, fetch unread messages, and extract code-file attachments.
+- **Deep AI Code Analysis**: Uses cutting-edge LLMs via OpenRouter to produce structured code reviews:
   1. Language identification
-  2. The original code formatted with inline explanatory comments added
-  3. Detailed bug detection (logic errors, syntax issues, etc.)
-  4. A succinct overall summary
-  5. A step-by-step workflow of how the code executes
-- **Stunning HTML Reports**: Markdown analysis is dynamically parsed and combined with Pygments syntax highlighting. The report is delivered in a premium, modern dark-mode HTML template with clear, high-contrast, pure-black snippet rendering and single-tone elegant comment typography.
-- **Auto-Reply Workflow**: Automatically sends the generated rich-text HTML report back to the original sender's email address.
-- **Local Fallback Mode**: If no relevant emails are found in your inbox, it organically falls back to scanning and analyzing local test files.
+  2. Code with inline explanatory comments
+  3. Bug detection (logic errors, syntax issues, security risks)
+  4. Concise summary
+  5. Step-by-step execution workflow
+- **Retry with Backoff**: Transient network failures are automatically retried with exponential back-off.
+- **Stunning HTML Reports**: Markdown analysis rendered with Pygments syntax highlighting in a modern dark-mode HTML template.
+- **Auto-Reply Workflow**: Automatically sends the generated report back to the original sender.
+- **Local Fallback Mode**: No relevant emails? The system falls back to analyzing the local `test.py` file.
 
 ## 🛠️ Project Structure
 
-- `main.py` - The main entry point that drives the automation pipeline.
-- `gmail_auth.py` - Handles secure OAuth 2.0 authentication with Gmail.
-- `gmail_reader.py` - Fetches unread emails and safely reads metadata.
-- `attachment_extractor.py` - Downloads and extracts attached code files dynamically.
-- `ai_analyzer.py` - Manages the OpenRouter API interaction and structures the code review prompt.
-- `report_generator.py` - Translates Markdown to structured HTML and parses code blocks via Pygments.
-- `templates/report.html` - The stylish, responsive Jinja2 HTML template.
-- `gmail_sender.py` - Composes the final HTML payload and automatically sends the finalized Code Review directly to the user.
-- `.env` - Environment variables (contains your `OPENROUTER_API_KEY`).
+| File | Purpose |
+|---|---|
+| `main.py` | Flask server + pipeline orchestrator |
+| `config.py` | Centralized configuration, constants, and logging setup |
+| `gmail_auth.py` | OAuth 2.0 authentication with **token caching** |
+| `gmail_reader.py` | Fetch unread emails, read content, mark as read |
+| `attachment_extractor.py` | Download & manage code-file attachments |
+| `ai_analyzer.py` | OpenRouter API interaction with retry logic |
+| `report_generator.py` | Markdown → HTML report generation |
+| `gmail_sender.py` | Compose and send HTML email replies |
+| `templates/report.html` | Jinja2 HTML report template |
+| `test.py` | Sample code for fallback analysis mode |
 
 ## 🚀 Getting Started
 
-### 1. Requirements
+### 1. Install Dependencies
 
-Install all necessary dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
 ### 2. Configuration
 
-Make sure your Google OAuth credentials (`credentials.json`) are present in the project's root folder.
+1. Place your Google OAuth `credentials.json` in the project root.
+2. Create a `.env` file:
 
-Create a `.env` file containing your OpenRouter API Key:
 ```env
 OPENROUTER_API_KEY=sk-or-v1-...
+
+# Optional overrides:
+# AI_MODEL=google/gemini-2.0-flash-001
+# AI_TIMEOUT=45
+# AI_MAX_RETRIES=3
+# SSL_VERIFY=true
+# DEBUG=false
+# PORT=8080
 ```
 
-### 3. Usage
+### 3. Run
 
-Run the main application:
 ```bash
 python3 main.py
 ```
 
-1. You will be prompted to authenticate with your Google Account in the browser (if not already authenticated).
-2. The script will automatically scan your `INBOX` for unread emails.
-3. If attachments are found, they will be downloaded, parsed, styled, and evaluated.
-4. The parsed HTML analysis payload is securely generated locally (`report.html`) and emailed securely back to the sender.
+1. On **first run**, a browser window opens for Google OAuth consent. Credentials are cached in `token.json` for subsequent runs.
+2. The Flask server starts on port 8080 (or `$PORT`).
+3. Hit `GET /run` to trigger the pipeline:
+   - Scans inbox for unread emails
+   - Downloads & analyzes code attachments
+   - Generates an HTML report (saved to `reports/`)
+   - Replies to the sender with the report
+
+### API Endpoints
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/` | GET | Health / base route |
+| `/run` | GET, POST | Trigger the analysis pipeline (background) |
+| `/health` | GET | Liveness check (Cloud Run / k8s) |
+
+## 🔧 Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| `OPENROUTER_API_KEY not found` | Ensure `.env` file exists in project root with the key set |
+| SSL errors on macOS | Set `SSL_VERIFY=false` in `.env` (development only) |
+| `credentials.json` not found | Download OAuth credentials from [Google Cloud Console](https://console.cloud.google.com/apis/credentials) |
+| Token expired / revoked | Delete `token.json` and re-run to re-authenticate |
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please ensure any robust structural enhancements or feature additions are well-documented.
+Contributions are welcome! Please ensure changes are well-documented and follow the established patterns (type hints, docstrings, logging via the `logging` module).
 
 ---
 
-*CodeMailer AI is entirely operational and optimized!*
+*CodeMailer AI — automated code review, straight from your inbox.*

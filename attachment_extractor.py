@@ -1,53 +1,110 @@
+"""
+Email attachment extractor.
+
+Downloads code-file attachments from Gmail messages into a dedicated
+``attachments/`` directory, with filename sanitization and per-file
+error isolation.
+"""
+
 import base64
+import logging
+import re
+from pathlib import Path
+from typing import Any, Dict, List
+
+from googleapiclient.discovery import Resource
+
+from config import ATTACHMENTS_DIR
+
+logger = logging.getLogger(__name__)
 
 
-def get_all_parts(parts):
-    all_parts = []
+def _sanitize_filename(name: str) -> str:
+    """Remove path-traversal characters and whitespace from a filename."""
+    name = Path(name).name                      # strip directory components
+    name = re.sub(r"[^\w.\-]", "_", name)       # replace unsafe chars
+    return name or "unnamed_attachment"
+
+
+def _get_all_parts(parts: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Recursively flatten nested MIME parts."""
+    flat: List[Dict[str, Any]] = []
     for part in parts:
-        all_parts.append(part)
+        flat.append(part)
         if "parts" in part:
-            all_parts.extend(get_all_parts(part["parts"]))
-    return all_parts
+            flat.extend(_get_all_parts(part["parts"]))
+    return flat
 
-def extract_attachments(service, message):
-    print("📎 Extracting attachments...")
+
+def extract_attachments(
+    service: Resource,
+    message: Dict[str, Any],
+) -> List[Path]:
+    """Download all attachments from a Gmail message.
+
+    Files are saved into the ``attachments/`` subdirectory.  Each
+    attachment is handled independently — a failure on one does not
+    block the others.
+
+    Args:
+        service: Authenticated Gmail API service object.
+        message: Full Gmail message resource dict.
+
+    Returns:
+        A list of ``Path`` objects pointing to the downloaded files.
+    """
+    logger.info("📎 Extracting attachments …")
+    ATTACHMENTS_DIR.mkdir(exist_ok=True)
 
     payload = message.get("payload", {})
-    parts = []
-    if "parts" in payload:
-        parts = get_all_parts(payload["parts"])
-    else:
-        parts = [payload]
+    parts = _get_all_parts(payload.get("parts", [])) if "parts" in payload else [payload]
 
-    files = []
+    downloaded: List[Path] = []
 
     for part in parts:
-        filename = part.get("filename")
+        raw_filename = part.get("filename")
+        if not raw_filename:
+            continue
 
-        if filename:
-            print(f"⬇️ Downloading attachment: {filename}")
+        filename = _sanitize_filename(raw_filename)
+        attachment_id = part.get("body", {}).get("attachmentId")
+        if not attachment_id:
+            logger.warning("⚠️ Skipping %s — no attachment ID", filename)
+            continue
 
-            attachment_id = part["body"].get("attachmentId")
-            
-            if attachment_id:
-                attachment = service.users().messages().attachments().get(
-                    userId="me",
-                    messageId=message["id"],
-                    id=attachment_id
-                ).execute()
+        try:
+            logger.info("⬇️  Downloading: %s", filename)
+            attachment = service.users().messages().attachments().get(
+                userId="me",
+                messageId=message["id"],
+                id=attachment_id,
+            ).execute()
 
-                data = base64.urlsafe_b64decode(
-                    attachment["data"].encode("UTF-8")
-                )
+            data = base64.urlsafe_b64decode(attachment["data"].encode("UTF-8"))
+            file_path = ATTACHMENTS_DIR / filename
 
-                with open(filename, "wb") as f:
-                    f.write(data)
+            file_path.write_bytes(data)
+            downloaded.append(file_path)
 
-                files.append(filename)
+        except Exception:
+            logger.error("❌ Failed to download %s", filename, exc_info=True)
 
-    if not files:
-        print("⚠️ No attachments found\n")
+    if downloaded:
+        logger.info("✅ Extracted %d file(s)", len(downloaded))
     else:
-        print(f"✅ Extracted {len(files)} file(s)\n")
+        logger.info("⚠️ No attachments found")
 
-    return files
+    return downloaded
+
+
+def cleanup_attachments(files: List[Path]) -> None:
+    """Delete previously downloaded attachment files.
+
+    Args:
+        files: Paths returned by :func:`extract_attachments`.
+    """
+    for path in files:
+        try:
+            path.unlink(missing_ok=True)
+        except OSError:
+            logger.debug("Could not remove %s", path, exc_info=True)

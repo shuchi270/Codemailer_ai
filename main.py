@@ -1,226 +1,253 @@
-import os
-import threading
-from pathlib import Path
+"""
+CodeMailer AI — main application entry point.
 
-from dotenv import load_dotenv
-from pygments.lexers import guess_lexer_for_filename
+Provides:
+- A Flask web server with ``/``, ``/run``, and ``/health`` endpoints.
+- A ``run()`` pipeline that reads Gmail, analyses code attachments,
+  generates reports, and replies to the sender.
+"""
+
+import logging
+import re
+import threading
+from dataclasses import dataclass
+from pathlib import Path
+from typing import List, Optional
+
 from flask import Flask, jsonify
+from pygments.lexers import guess_lexer_for_filename
 
 from ai_analyzer import analyze_code
-from attachment_extractor import extract_attachments
+from attachment_extractor import cleanup_attachments, extract_attachments
+from config import (
+    FALLBACK_FILE,
+    LANGUAGE_MAP,
+    TEXT_EXTENSIONS,
+    AppConfig,
+    ensure_directories,
+    setup_logging,
+)
 from gmail_auth import gmail_authenticate
-from gmail_reader import get_email_content
+from gmail_reader import get_email_content, get_unread_messages, mark_as_read
 from gmail_sender import send_reply
 from report_generator import generate_report
 
-load_dotenv()
-
-BASE_DIR = Path(__file__).parent
-FALLBACK_FILE = BASE_DIR / "test.py"
-TEXT_EXTENSIONS = {
-    ".py", ".js", ".ts", ".java", ".cpp", ".c", ".cs", ".go",
-    ".rb", ".php", ".rs", ".swift", ".kt", ".scala", ".html",
-    ".css", ".json", ".xml", ".yaml", ".yml", ".sql", ".sh",
-}
+logger = logging.getLogger(__name__)
 
 
-def get_unread_messages(service):
-    results = service.users().messages().list(
-        userId="me",
-        labelIds=["INBOX"],
-        q="is:unread",
-        maxResults=1
-    ).execute()
-    return results.get("messages", [])
+# ─── Data classes ────────────────────────────────────────────────
+
+@dataclass
+class EmailMeta:
+    """Parsed metadata for a single email."""
+
+    message_id: str
+    subject: str
+    sender: str
+
+    @classmethod
+    def from_message(cls, message: dict) -> "EmailMeta":
+        headers = message.get("payload", {}).get("headers", [])
+        header_map = {h["name"].lower(): h["value"] for h in headers}
+        return cls(
+            message_id=message.get("id", "N/A"),
+            subject=header_map.get("subject", "(No Subject)"),
+            sender=header_map.get("from", "Unknown Sender"),
+        )
+
+    @property
+    def sender_email(self) -> str:
+        """Extract the bare email address from the *From* header."""
+        match = re.search(r"<([^>]+)>", self.sender)
+        return match.group(1) if match else self.sender
 
 
-def read_text_file(file_path):
-    try:
-        return file_path.read_text(encoding="utf-8")
-    except UnicodeDecodeError:
-        return None
+# ─── File analysis helpers ───────────────────────────────────────
 
-
-def looks_like_code(file_path, code):
+def _is_code_file(file_path: Path, content: str) -> bool:
+    """Return True if the file looks like source code."""
     if file_path.suffix.lower() in TEXT_EXTENSIONS:
         return True
-
     try:
-        guess_lexer_for_filename(file_path.name, code)
+        guess_lexer_for_filename(file_path.name, content)
         return True
     except Exception:
         return False
 
 
-def get_language_name(file_path, code):
-    mapping = {
-        ".py": "Python", ".js": "JavaScript", ".ts": "TypeScript", 
-        ".java": "Java", ".cpp": "C++", ".c": "C", ".cs": "C#", 
-        ".go": "Go", ".rb": "Ruby", ".php": "PHP", ".rs": "Rust", 
-        ".swift": "Swift", ".kt": "Kotlin", ".scala": "Scala", 
-        ".html": "HTML", ".css": "CSS", ".json": "JSON", 
-        ".xml": "XML", ".yaml": "YAML", ".yml": "YAML", 
-        ".sql": "SQL", ".sh": "Shell Script"
-    }
+def _get_language(file_path: Path, content: str) -> str:
+    """Map *file_path* to a human-readable language name."""
     ext = file_path.suffix.lower()
-    if ext in mapping:
-        return mapping[ext]
+    if ext in LANGUAGE_MAP:
+        return LANGUAGE_MAP[ext]
     try:
-        lexer = guess_lexer_for_filename(file_path.name, code)
-        return lexer.name
+        return guess_lexer_for_filename(file_path.name, content).name
     except Exception:
         return "Unknown"
 
-def analyze_file(file_path):
-    code = read_text_file(file_path)
-    if not code:
+
+def _read_text(file_path: Path) -> Optional[str]:
+    """Read file as UTF-8 text; return None on decode errors."""
+    try:
+        return file_path.read_text(encoding="utf-8")
+    except (UnicodeDecodeError, OSError):
         return None
 
-    if not looks_like_code(file_path, code):
+
+def analyze_file(file_path: Path) -> Optional[str]:
+    """Analyse a single source-code file.
+
+    Returns a Markdown section string or *None* if the file is
+    unreadable or not source code.
+    """
+    code = _read_text(file_path)
+    if not code or not _is_code_file(file_path, code):
         return None
 
-    print(f"🤖 Analyzing {file_path.name}...")
+    logger.info("🤖 Analyzing %s …", file_path.name)
 
-    lang_name = get_language_name(file_path, code)
-    if lang_name != "Unknown":
-        language_line = f"Detected language: {lang_name}\n\n"
-    else:
-        language_line = ""
+    lang = _get_language(file_path, code)
+    lang_line = f"Detected language: {lang}\n\n" if lang != "Unknown" else ""
 
     analysis = analyze_code(code)
-    return f"# File: {file_path.name}\n\n{language_line}{analysis}"
+    return f"# File: {file_path.name}\n\n{lang_line}{analysis}"
 
 
-def process_email(service, message_ref):
+# ─── Email processing ───────────────────────────────────────────
+
+def _print_report(title: str, report_text: str) -> None:
+    """Pretty-print an analysis report to the console."""
+    separator = "=" * 50
+    logger.info("\n%s\n%s\n%s\n%s\n%s", separator, title, separator, report_text, separator)
+
+
+def process_email(service, message_ref: dict) -> Optional[tuple]:
+    """Process a single unread email: extract → analyse → report.
+
+    Returns:
+        ``(markdown_report, EmailMeta)`` on success, or *None*.
+    """
     message = get_email_content(service, message_ref["id"])
-    headers = message.get("payload", {}).get("headers", [])
-    header_map = {header["name"].lower(): header["value"] for header in headers}
-
-    print(f"📧 Processing email: {header_map.get('subject', '(No Subject)')}")
+    meta = EmailMeta.from_message(message)
+    logger.info("📧 Processing email: %s", meta.subject)
 
     downloaded_files = extract_attachments(service, message)
-    analyses = []
+    analyses: List[str] = []
 
-    for filename in downloaded_files:
-        file_path = BASE_DIR / filename
-        if not file_path.exists():
-            continue
-
-        analysis = analyze_file(file_path)
-        if analysis:
-            analyses.append(analysis)
+    try:
+        for file_path in downloaded_files:
+            if not file_path.exists():
+                continue
+            result = analyze_file(file_path)
+            if result:
+                analyses.append(result)
+    finally:
+        # Always clean up downloaded attachments
+        cleanup_attachments(downloaded_files)
 
     if not analyses:
         return None
 
-    email_summary = [
-        f"### Email Details",
-        f"**Subject:** {header_map.get('subject', '(No Subject)')}",
-        f"**From:** {header_map.get('from', 'Unknown Sender')}",
-        f"**Message ID:** {message.get('id', 'N/A')}",
+    email_summary = "\n".join([
+        "### Email Details",
+        f"**Subject:** {meta.subject}",
+        f"**From:** {meta.sender}",
+        f"**Message ID:** {meta.message_id}",
         "---",
-    ]
-    return "\n".join(email_summary) + "\n\n".join(analyses), header_map.get('from')
+    ])
+    return email_summary + "\n\n" + "\n\n".join(analyses), meta
 
 
-def process_fallback_file():
-    if not FALLBACK_FILE.exists():
-        return None
-
-    print(f"📂 No code attachments found. Falling back to {FALLBACK_FILE.name}.")
-    return analyze_file(FALLBACK_FILE)
-
-
-def run():
-    print("🚀 CodeMailer AI started successfully!")
+def run() -> None:
+    """Execute the full CodeMailer AI pipeline."""
+    logger.info("🚀 CodeMailer AI pipeline started")
+    ensure_directories()
 
     service = gmail_authenticate()
-    unread_messages = get_unread_messages(service)
-
-    print(f"📥 Unread emails found: {len(unread_messages)}")
+    unread = get_unread_messages(service)
+    logger.info("📥 Unread emails found: %d", len(unread))
 
     processed_any = False
 
-    for message_ref in unread_messages:
+    for message_ref in unread:
+        # Mark as read immediately to prevent reprocessing
+        mark_as_read(service, message_ref["id"])
+
         result = process_email(service, message_ref)
-        
-        # Mark as read to avoid processing the same email infinitely
-        try:
-            service.users().messages().modify(
-                userId="me",
-                id=message_ref["id"],
-                body={"removeLabelIds": ["UNREAD"]}
-            ).execute()
-        except Exception as e:
-            pass
-            
-        if result:
-            final_report, sender_email = result
-            html_report = generate_report(final_report)
+        if not result:
+            continue
 
-            print("\n" + "=" * 50)
-            print("AI ANALYSIS RESULT:")
-            print("=" * 50)
-            print(final_report)
-            print("=" * 50)
-            print("Report generated: report.html")
-            print("=" * 50)
+        final_report, meta = result
+        html_report = generate_report(final_report)
 
-            if sender_email:
-                import re
-                match = re.search(r'<([^>]+)>', sender_email)
-                to_email = match.group(1) if match else sender_email
-                send_reply(service, to_email, html_report)
-            
-            processed_any = True
+        _print_report("AI ANALYSIS RESULT", final_report)
+
+        send_reply(service, meta.sender_email, html_report)
+        processed_any = True
 
     if not processed_any:
-        final_report = process_fallback_file()
-        if final_report:
-            html_report = generate_report(final_report)
+        _run_fallback()
 
-            print("\n" + "=" * 50)
-            print("AI ANALYSIS RESULT:")
-            print("=" * 50)
-            print(final_report)
-            print("=" * 50)
-            print("Report generated: report.html")
-            print("=" * 50)
-        else:
-            print("❌ No readable code files were found in unread emails or the fallback test file.")
+    logger.info("✅ Pipeline complete")
 
+
+def _run_fallback() -> None:
+    """Analyse the local fallback test file when no emails matched."""
+    if not FALLBACK_FILE.exists():
+        logger.warning("❌ No code files found in emails and no fallback file available")
+        return
+
+    logger.info("📂 No code attachments found. Falling back to %s", FALLBACK_FILE.name)
+    report_text = analyze_file(FALLBACK_FILE)
+
+    if report_text:
+        html_report = generate_report(report_text)
+        _print_report("AI ANALYSIS RESULT (fallback)", report_text)
+    else:
+        logger.warning("❌ Fallback file could not be analysed")
+
+
+# ─── Flask application ──────────────────────────────────────────
 
 app = Flask(__name__)
 
-# ✅ Health / base route
+
 @app.route("/", methods=["GET"])
 def home():
+    """Health / base route."""
     return "CodeMailer AI is running 🚀"
 
-# ✅ Run pipeline in background thread
+
 @app.route("/run", methods=["GET", "POST"])
 def run_pipeline():
+    """Trigger the analysis pipeline in a background thread."""
     try:
-        thread = threading.Thread(target=run)
+        thread = threading.Thread(target=run, daemon=True)
         thread.start()
         return jsonify({
             "status": "started",
-            "message": "CodeMailer AI pipeline is running in background 🚀"
+            "message": "CodeMailer AI pipeline is running in background 🚀",
         })
-    except Exception as e:
+    except Exception as exc:
+        logger.error("Failed to start pipeline", exc_info=True)
         return jsonify({
             "status": "error",
-            "message": str(e)
+            "message": str(exc),
         }), 500
 
-# ✅ Optional: health check endpoint (good for Cloud Run)
+
 @app.route("/health", methods=["GET"])
 def health():
+    """Liveness check (useful for Cloud Run / k8s)."""
     return "OK", 200
 
+
+# ─── Entry point ─────────────────────────────────────────────────
+
 if __name__ == "__main__":
-    app.run(
-        host="0.0.0.0",
-        port=int(os.environ.get("PORT", 8080)),
-        debug=True
-    )
+    setup_logging()
+
+    config = AppConfig.from_env()
+    logger.info("Starting Flask on %s:%d (debug=%s)", config.host, config.port, config.debug)
+
+    app.run(host=config.host, port=config.port, debug=config.debug)
